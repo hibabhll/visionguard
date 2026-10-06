@@ -1,0 +1,343 @@
+[
+    {
+        "id": "visionguard",
+        "type": "tab",
+        "label": "VisionGuard",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "vg_mqtt_in",
+        "type": "mqtt in",
+        "z": "visionguard",
+        "name": "MQTT Telemetry",
+        "topic": "hiba/visionguard/telemetry",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "vg_broker",
+        "inputs": 0,
+        "x": 140,
+        "y": 120,
+        "wires": [
+            [
+                "parse_telemetry"
+            ]
+        ]
+    },
+    {
+        "id": "vg_mqtt_status",
+        "type": "mqtt in",
+        "z": "visionguard",
+        "name": "MQTT Status",
+        "topic": "hiba/visionguard/status",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "vg_broker",
+        "inputs": 0,
+        "x": 130,
+        "y": 220,
+        "wires": [
+            [
+                "txt_status"
+            ]
+        ]
+    },
+    {
+        "id": "vg_mqtt_alert",
+        "type": "mqtt in",
+        "z": "visionguard",
+        "name": "MQTT Alert",
+        "topic": "hiba/visionguard/alert",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "vg_broker",
+        "inputs": 0,
+        "x": 130,
+        "y": 300,
+        "wires": [
+            [
+                "fn_alert",
+                "debug_alert"
+            ]
+        ]
+    },
+    {
+        "id": "parse_telemetry",
+        "type": "function",
+        "z": "visionguard",
+        "name": "Extract values",
+        "func": "var d = msg.payload;\nvar mDist = {payload: d.distance_cm};\nvar mBatt = {payload: d.battery_pct};\nvar mState = {payload: d.state};\nvar mRssi = {payload: d.rssi};\nvar mUp = {payload: d.uptime_s};\nreturn [mDist, mBatt, mState, mRssi, mUp];",
+        "outputs": 5,
+        "x": 360,
+        "y": 120,
+        "wires": [
+            [
+                "gauge_distance"
+            ],
+            [
+                "gauge_battery"
+            ],
+            [
+                "fn_state"
+            ],
+            [
+                "txt_rssi"
+            ],
+            [
+                "txt_uptime"
+            ]
+        ]
+    },
+    {
+        "id": "gauge_distance",
+        "type": "ui_gauge",
+        "z": "visionguard",
+        "name": "Distance",
+        "group": "vg_sensors",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "gtype": "gage",
+        "title": "Distance obstacle",
+        "label": "cm",
+        "format": "{{value}}",
+        "min": "0",
+        "max": "400",
+        "colors": [
+            "#c81919",
+            "#f5c800",
+            "#4caf50"
+        ],
+        "seg1": "40",
+        "seg2": "100",
+        "x": 580,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "gauge_battery",
+        "type": "ui_gauge",
+        "z": "visionguard",
+        "name": "Battery",
+        "group": "vg_sensors",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "gtype": "gage",
+        "title": "Batterie",
+        "label": "%",
+        "format": "{{value}}",
+        "min": "0",
+        "max": "100",
+        "colors": [
+            "#c81919",
+            "#f5c800",
+            "#4caf50"
+        ],
+        "seg1": "20",
+        "seg2": "50",
+        "x": 580,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "fn_state",
+        "type": "function",
+        "z": "visionguard",
+        "name": "State to color",
+        "func": "var labels = ['NORMAL','WARNING','CRITICAL','FALL'];\nvar colors = ['#4caf50','#f5c800','#ff5722','#c81919'];\nvar s = msg.payload;\nmsg.text = labels[s] || 'UNKNOWN';\nmsg.color = colors[s] || '#888888';\nmsg.payload = msg.text;\nreturn msg;",
+        "outputs": 1,
+        "x": 580,
+        "y": 180,
+        "wires": [
+            [
+                "txt_state"
+            ]
+        ]
+    },
+    {
+        "id": "txt_state",
+        "type": "ui_text",
+        "z": "visionguard",
+        "group": "vg_state",
+        "order": 1,
+        "width": 12,
+        "height": 3,
+        "name": "Etat",
+        "label": "Etat actuel :",
+        "format": "<span style=\"color:{{msg.color}};font-size:28px;font-weight:bold\">{{msg.text}}</span>",
+        "layout": "row-center",
+        "x": 790,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "txt_rssi",
+        "type": "ui_text",
+        "z": "visionguard",
+        "group": "vg_status",
+        "order": 1,
+        "width": 4,
+        "height": 2,
+        "name": "RSSI",
+        "label": "Signal WiFi :",
+        "format": "{{msg.payload}} dBm",
+        "layout": "row-spread",
+        "x": 580,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "txt_uptime",
+        "type": "ui_text",
+        "z": "visionguard",
+        "group": "vg_status",
+        "order": 2,
+        "width": 4,
+        "height": 2,
+        "name": "Uptime",
+        "label": "Uptime :",
+        "format": "{{msg.payload}} s",
+        "layout": "row-spread",
+        "x": 580,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "txt_status",
+        "type": "ui_text",
+        "z": "visionguard",
+        "group": "vg_status",
+        "order": 3,
+        "width": 4,
+        "height": 2,
+        "name": "Connexion",
+        "label": "Connexion :",
+        "format": "<b>{{msg.payload}}</b>",
+        "layout": "row-spread",
+        "x": 580,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "fn_alert",
+        "type": "function",
+        "z": "visionguard",
+        "name": "Fall filter",
+        "func": "if (msg.payload && msg.payload.state === 3) {\n msg.payload = 'CHUTE DETECTEE ! Batterie: ' + msg.payload.battery_pct + '%';\n return msg;\n}\nreturn null;",
+        "outputs": 1,
+        "x": 360,
+        "y": 300,
+        "wires": [
+            [
+                "notif_fall"
+            ]
+        ]
+    },
+    {
+        "id": "notif_fall",
+        "type": "ui_toast",
+        "z": "visionguard",
+        "position": "top right",
+        "displayTime": "10",
+        "highlight": "#c81919",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "",
+        "name": "FALL Alert",
+        "x": 580,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "debug_alert",
+        "type": "debug",
+        "z": "visionguard",
+        "name": "Debug alerts",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 360,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "vg_broker",
+        "type": "mqtt-broker",
+        "name": "HiveMQ Public",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": "true",
+        "usetls": false,
+        "compatmode": "false",
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": "true",
+        "autoUnsubscribe": "true",
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "vg_sensors",
+        "type": "ui_group",
+        "name": "Capteurs",
+        "tab": "vg_tab",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "vg_state",
+        "type": "ui_group",
+        "name": "Etat",
+        "tab": "vg_tab",
+        "order": 2,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "vg_status",
+        "type": "ui_group",
+        "name": "Status",
+        "tab": "vg_tab",
+        "order": 3,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "vg_tab",
+        "type": "ui_tab",
+        "name": "VisionGuard",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "7a2bbdd779333f9e",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
